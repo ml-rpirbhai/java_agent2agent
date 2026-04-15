@@ -188,6 +188,14 @@ The running agent is the `**product_catalog_agent**` defined in `[ProductCatalog
 
 Press **Ctrl+C** in the terminal where the process is running. If port 8001 is still held by a stray process, free it (e.g. `fuser -k 8001/tcp` on Linux) before starting again.
 
+To list the PID that's using port 8001:
+```bash
+ss -anop | grep 8001 
+```
+or 
+```bash
+netstat -anop | grep 8001
+```
 ---
 
 ## Quick reference
