@@ -18,6 +18,8 @@
     <google-adk-a2a.version>1.1.0</google-adk-a2a.version>
     <a2a.sdk.version>0.3.0.Beta1</a2a.sdk.version>
     <quarkus.platform.version>3.30.6</quarkus.platform.version>
+    <exec-maven-plugin.version>3.5.0</exec-maven-plugin.version>
+    <standalone.agent.mainClass>com.example.productcatalog.agent.ProductCatalogAgent</standalone.agent.mainClass>
   </properties>
 
   <dependencyManagement>
@@ -45,6 +47,11 @@
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.cdimascio</groupId>
+      <artifactId>dotenv-java</artifactId>
+      <version>3.0.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.adk</groupId>
@@ -93,6 +100,7 @@
         <version>3.13.0</version>
         <configuration>
           <release>${maven.compiler.release}</release>
+          <parameters>true</parameters>
         </configuration>
       </plugin>
       <plugin>
@@ -109,6 +117,14 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${exec-maven-plugin.version}</version>
+        <configuration>
+          <mainClass>${standalone.agent.mainClass}</mainClass>
+        </configuration>
       </plugin>
     </plugins>
   </build>

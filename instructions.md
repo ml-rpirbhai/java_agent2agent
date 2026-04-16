@@ -20,7 +20,7 @@ Maven will hit the network (or use your local cache) when you run goals such as 
 
 - This is the **first** build on a machine or in a clean environment.
 - You changed `**pom.xml`** or dependency versions.
-- You used `**mvn clean**` and artifacts were removed from `target/` (Maven may still use `~/.m2` without re-downloading).
+- You used `**mvn clean`** and artifacts were removed from `target/` (Maven may still use `~/.m2` without re-downloading).
 - You passed `**-U**` / **--update-snapshots** and Maven checks for newer releases.
 - Part of the cache under `**~/.m2/repository`** (or your project-local repo) was deleted.
 
@@ -79,13 +79,13 @@ If dependency downloads fail with TLS or corporate proxy errors, fix JVM trust s
 
 ## 4. Package the application as a runnable bundle (JAR)
 
-Quarkus packages a **directory** named `**target/quarkus-app/`** (not a single “fat” JAR by default). The entry point is `**quarkus-run.jar**`; it expects the `**lib/**` tree and other files **next to it** inside that folder.
+Quarkus packages a **directory** named `**target/quarkus-app/`** (not a single “fat” JAR by default). The entry point is `**quarkus-run.jar`**; it expects the `**lib/**` tree and other files **next to it** inside that folder.
 
 1. Ensure you have already resolved dependencies at least once (see [section 2](#2-maven-dependencies--optional-only-when-needed)).
 2. From the repository root, produce the bundle:
   **Option A (default `~/.m2/repository`):**
    **Option B (project-local repository):**
-3. Confirm the layout (you should see `**quarkus-run.jar`** and `**lib/**` among others):
+3. Confirm the layout (you should see `**quarkus-run.jar`** and `**lib/`** among others):
   ```bash
    ls target/quarkus-app/
   ```
@@ -94,19 +94,19 @@ To deploy elsewhere, copy the **entire** `**target/quarkus-app/`** directory (pr
 
 ---
 
-## 5. Run the A2A `product_catalog` agent
+## 5. Run the `quarkus` A2A `product_catalog` agent
 
 The agent listens on **port 8001** by default (see `[src/main/resources/application.properties](src/main/resources/application.properties)`).
 
 ### 5.1 Set the API key
+
+Use ```.env```
 
 In the same shell where you start the server:
 
 ```bash
 export GOOGLE_API_KEY="YOUR_GEMINI_API_KEY"
 ```
-
-(On Windows CMD, use `set GOOGLE_API_KEY=...`; in PowerShell, `$env:GOOGLE_API_KEY="..."`.)
 
 ### 5.2 Option A — development mode (Maven; may resolve dependencies if needed)
 
@@ -155,12 +155,12 @@ java -Dquarkus.http.port=8001 -jar target/quarkus-app/quarkus-run.jar
 
 - **Agent card (discovery):**  
 `GET` [http://localhost:8001/.well-known/agent-card.json](http://localhost:8001/.well-known/agent-card.json)
-  Example:
+Example:
   ```bash
   curl -fsS "http://localhost:8001/.well-known/agent-card.json"
   ```
 - **A2A JSON-RPC (invoke the agent):** send a `POST` to the **server root** with `Content-Type: application/json` and a JSON-RPC body whose method is `**message/send`**, as in the [ADK Java A2A exposing quickstart](https://google.github.io/adk-docs/a2a/quickstart-exposing-java/).
-  Example:
+Example:
   ```bash
   curl -fsS -X POST "http://localhost:8001/" \
     -H "Content-Type: application/json" \
@@ -189,15 +189,43 @@ The running agent is the `**product_catalog_agent**` defined in `[ProductCatalog
 Press **Ctrl+C** in the terminal where the process is running. If port 8001 is still held by a stray process, free it (e.g. `fuser -k 8001/tcp` on Linux) before starting again.
 
 To list the PID that's using port 8001:
+
 ```bash
 ss -anop | grep 8001 
 ```
+
 or 
+
 ```bash
 netstat -anop | grep 8001
 ```
----
 
+---
+## 6. Run standalone `product_catalog` agent
+
+Runs [`ProductCatalogAgent`](src/main/java/com/example/productcatalog/agent/ProductCatalogAgent.java) (`main`) with the same in-memory catalog and Gemini model as the server path. **Compile first** so `exec:java` does not run stale classes:
+
+```bash
+cd /path/to/agent2agent
+
+# API key: export GOOGLE_API_KEY, or put GOOGLE_API_KEY=... in a `.env` file in this directory
+# (standalone `main` reads `.env` via dotenv-java when the variable is not already set).
+
+mvn -q compile exec:java -Dmaven.repo.local="${PWD}/.m2/repository"
+```
+
+Optional: pass a single user question as program arguments (exec-maven-plugin):
+
+```bash
+mvn -q compile exec:java -Dmaven.repo.local="${PWD}/.m2/repository" \
+  -Dexec.args="What is the price of the MacBook Pro 14?"
+```
+
+If you use a **project-local Maven repo** only when needed, omit `-Dmaven.repo.local=...` and use your default `~/.m2/repository` instead.
+
+**Corporate HTTP(S) proxy:** the standalone agent configures the Google GenAI Java client from `HTTPS_PROXY`, `https_proxy`, `HTTP_PROXY`, or `http_proxy` when set, so traffic can reach Gemini through the same proxy as tools like `curl`.
+
+---
 ## Quick reference
 
 
@@ -207,6 +235,7 @@ netstat -anop | grep 8001
 | Agent card URL    | `http://localhost:8001/.well-known/agent-card.json`       |
 | JSON-RPC URL      | `http://localhost:8001/` (POST, `message/send`)           |
 | Required env      | `GOOGLE_API_KEY`                                          |
+| Standalone agent  | `mvn -q compile exec:java` (see [section 6](#6-run-standalone-product_catalog-agent)) |
 | Packaged bundle   | `target/quarkus-app/` (run `java -jar …/quarkus-run.jar`) |
 | Dev entrypoint    | `mvn quarkus:dev`                                         |
 

@@ -1,3 +1,4 @@
+.env
 target/
 .m2/
 !**/src/main/**/target/
